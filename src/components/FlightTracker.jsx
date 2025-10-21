@@ -204,7 +204,7 @@ const FlightTracker = () => {
                 </div>
             </div>
 
-            {/* <div className="map-container">
+            <div className="map-container">
                 {flightPath.length > 0 ? (
                     <FlightMap 
                         flightPath={flightPath}
@@ -217,7 +217,7 @@ const FlightTracker = () => {
                         <p>Enter a flight number and click "Track Flight"</p>
                     </div>
                 )}
-            </div> */}
+            </div>
         </div>
     );
 };
