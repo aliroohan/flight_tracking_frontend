@@ -1,0 +1,244 @@
+.flight-tracker {
+    display: flex;
+    height: 100vh;
+    background: #0f1419;
+    color: #e8eaed;
+}
+
+.tracker-sidebar {
+    width: 400px;
+    background: #1a1f29;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 2px solid #2a3f5f;
+}
+
+.tracker-sidebar h1 {
+    margin: 0 0 30px 0;
+    color: #00d4ff;
+    font-size: 28px;
+}
+
+.tracker-sidebar h2 {
+    margin: 20px 0 15px 0;
+    color: #00d4ff;
+    font-size: 20px;
+    border-bottom: 2px solid #2a3f5f;
+    padding-bottom: 8px;
+}
+
+.tracker-sidebar h3 {
+    margin: 15px 0 10px 0;
+    color: #7fb3d5;
+    font-size: 16px;
+}
+
+.search-section,
+.timestamp-section {
+    margin-bottom: 25px;
+}
+
+.search-section input,
+.timestamp-section input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #0f1419;
+    border: 2px solid #2a3f5f;
+    border-radius: 5px;
+    color: #e8eaed;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.search-section input:focus,
+.timestamp-section input:focus {
+    outline: none;
+    border-color: #00d4ff;
+}
+
+.search-section button,
+.timestamp-section button {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #00d4ff 0%, #0066ff 100%);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-section button:hover,
+.timestamp-section button:hover {
+    background: linear-gradient(135deg, #00ffff 0%, #0088ff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+}
+
+.search-section button:disabled,
+.timestamp-section button:disabled {
+    background: #2a3f5f;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.error-message {
+    background: rgba(255, 50, 50, 0.2);
+    border: 1px solid #ff3232;
+    color: #ff6b6b;
+    padding: 12px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.flight-info,
+.current-position,
+.path-info {
+    background: #0f1419;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #2a3f5f;
+}
+
+.info-item {
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #2a3f5f;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item strong {
+    color: #7fb3d5;
+    margin-right: 10px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-scheduled {
+    background: #4a4a4a;
+    color: #ffffff;
+}
+
+.status-boarding {
+    background: #ff9800;
+    color: #ffffff;
+}
+
+.status-departed,
+.status-in-flight {
+    background: #4caf50;
+    color: #ffffff;
+}
+
+.status-landed {
+    background: #2196f3;
+    color: #ffffff;
+}
+
+.status-cancelled {
+    background: #f44336;
+    color: #ffffff;
+}
+
+.active-flights {
+    margin-top: 30px;
+}
+
+.flights-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.flight-item {
+    background: #0f1419;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 5px;
+    border: 1px solid #2a3f5f;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.flight-item:hover {
+    border-color: #00d4ff;
+    background: #1a2332;
+    transform: translateX(5px);
+}
+
+.flight-item strong {
+    color: #00d4ff;
+    font-size: 16px;
+}
+
+.flight-item span {
+    color: #7fb3d5;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.map-container {
+    flex: 1;
+    position: relative;
+}
+
+.map-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    background: linear-gradient(135deg, #0f1419 0%, #1a2332 100%);
+}
+
+.map-placeholder h2 {
+    color: #00d4ff;
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+.map-placeholder p {
+    color: #7fb3d5;
+    font-size: 18px;
+}
+
+/* Scrollbar styling */
+.tracker-sidebar::-webkit-scrollbar,
+.flights-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tracker-sidebar::-webkit-scrollbar-track,
+.flights-list::-webkit-scrollbar-track {
+    background: #0f1419;
+}
+
+.tracker-sidebar::-webkit-scrollbar-thumb,
+.flights-list::-webkit-scrollbar-thumb {
+    background: #2a3f5f;
+    border-radius: 4px;
+}
+
+.tracker-sidebar::-webkit-scrollbar-thumb:hover,
+.flights-list::-webkit-scrollbar-thumb:hover {
+    background: #00d4ff;
+}
+
