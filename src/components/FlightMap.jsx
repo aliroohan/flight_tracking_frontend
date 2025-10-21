@@ -187,7 +187,7 @@ const FlightMap = ({ flightPath, flightInfo, currentPosition }) => {
       <div style={{
         position: 'absolute',
         top: '10px',
-        left: '10px',
+        left: '50px',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
         padding: '10px',
