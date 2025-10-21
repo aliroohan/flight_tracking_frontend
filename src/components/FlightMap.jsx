@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // You need to get a free Mapbox token from https://www.mapbox.com/
-const MAPBOX_TOKEN = "sk.eyJ1IjoiYWxpcm9vaGFuIiwiYSI6ImNtaDBuM3NpMDAyc3oycXM3Zmpkb3BycjAifQ.k1bNWtcvzO-x8z2R_BxT8w"; // Replace with your actual token
+const MAPBOX_TOKEN = import.meta.env.MAP_API; // Replace with your actual token
 console.log(MAPBOX_TOKEN);
 
 const FlightMap = ({ flightPath, flightInfo, currentPosition }) => {
