@@ -1,247 +1,206 @@
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-// You need to get a free Mapbox token from https://www.mapbox.com/
-const MAPBOX_TOKEN = import.meta.env.VITE_MAP_API; // Replace with your actual token
+// Fix for default markers in react-leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom airplane icon
+const createAirplaneIcon = (heading = 0) => {
+  return L.divIcon({
+    html: `<div style="transform: rotate(${heading}deg); font-size: 24px;">✈️</div>`,
+    className: 'custom-airplane-icon',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+};
+
+// Custom origin/destination icons
+const createOriginIcon = () => {
+  return L.divIcon({
+    html: '<div style="font-size: 24px;">🛫</div>',
+    className: 'custom-origin-icon',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+};
+
+const createDestinationIcon = () => {
+  return L.divIcon({
+    html: '<div style="font-size: 24px;">🛬</div>',
+    className: 'custom-destination-icon',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+};
+
+// Component to fit map bounds to flight path
+const FitBounds = ({ coordinates }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (coordinates && coordinates.length > 0) {
+      const bounds = L.latLngBounds(coordinates);
+      map.fitBounds(bounds, { padding: [20, 20] });
+    }
+  }, [coordinates, map]);
+  
+  return null;
+};
 
 const FlightMap = ({ flightPath, flightInfo, currentPosition }) => {
-    const mapContainer = useRef(null);
-    const map = useRef(null);
-    const [lng, setLng] = useState(0);
-    const [lat, setLat] = useState(20);
-    const [zoom, setZoom] = useState(2);
+  const [mapCenter, setMapCenter] = useState([20, 0]);
+  const [mapZoom, setMapZoom] = useState(2);
 
-    useEffect(() => {
-        if (map.current) return; // Initialize map only once
+  // Prepare coordinates for the flight path
+  const flightCoordinates = useMemo(() => {
+    return flightPath && flightPath.length > 0 
+      ? flightPath.map(point => [point.latitude, point.longitude])
+      : [];
+  }, [flightPath]);
+
+  // Calculate map center and zoom based on flight path
+  useEffect(() => {
+    if (flightCoordinates.length > 0) {
+      const bounds = L.latLngBounds(flightCoordinates);
+      const center = bounds.getCenter();
+      setMapCenter([center.lat, center.lng]);
+      setMapZoom(3);
+    }
+  }, [flightCoordinates]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <MapContainer
+        center={mapCenter}
+        zoom={mapZoom}
+        style={{ width: '100%', height: '100%' }}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
         
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-        
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
-            center: [lng, lat],
-            zoom: zoom,
-            projection: 'globe'
-        });
+        {/* Dark theme alternative - uncomment to use */}
+        {/* <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+        /> */}
 
-        map.current.on('move', () => {
-            setLng(map.current.getCenter().lng.toFixed(4));
-            setLat(map.current.getCenter().lat.toFixed(4));
-            setZoom(map.current.getZoom().toFixed(2));
-        });
+        {/* Flight path line */}
+        {flightCoordinates.length > 0 && (
+          <Polyline
+            positions={flightCoordinates}
+            pathOptions={{
+              color: '#00D4FF',
+              weight: 3,
+              opacity: 0.8
+            }}
+          />
+        )}
 
-        // Add navigation controls
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        {/* Flight path points */}
+        {flightPath && flightPath.map((point, index) => (
+          <CircleMarker
+            key={index}
+            center={[point.latitude, point.longitude]}
+            radius={4}
+            pathOptions={{
+              color: '#00D4FF',
+              fillColor: '#00D4FF',
+              fillOpacity: 0.6
+            }}
+          >
+            <Popup>
+              <div style={{ color: 'black' }}>
+                <strong>Tracking Point #{index + 1}</strong><br/>
+                <strong>Altitude:</strong> {point.altitude} ft<br/>
+                <strong>Speed:</strong> {point.speed} knots<br/>
+                <strong>Time:</strong> {new Date(point.timestamp).toLocaleString()}
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
 
-        // Add fog effect for globe
-        map.current.on('style.load', () => {
-            map.current.setFog({
-                'horizon-blend': 0.3,
-                'color': '#242B4B',
-                'high-color': '#161B36',
-                'space-color': '#0B1026',
-                'star-intensity': 0.8
-            });
-        });
-    }, []);
+        {/* Origin marker */}
+        {flightInfo && flightInfo.origin && (
+          <Marker
+            position={[flightInfo.origin.coordinates.latitude, flightInfo.origin.coordinates.longitude]}
+            icon={createOriginIcon()}
+          >
+            <Popup>
+              <div style={{ color: 'black' }}>
+                <h3>Origin</h3>
+                <p>{flightInfo.origin.airport} - {flightInfo.origin.city}</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
-    useEffect(() => {
-        if (!map.current || !flightPath || flightPath.length === 0) return;
+        {/* Destination marker */}
+        {flightInfo && flightInfo.destination && (
+          <Marker
+            position={[flightInfo.destination.coordinates.latitude, flightInfo.destination.coordinates.longitude]}
+            icon={createDestinationIcon()}
+          >
+            <Popup>
+              <div style={{ color: 'black' }}>
+                <h3>Destination</h3>
+                <p>{flightInfo.destination.airport} - {flightInfo.destination.city}</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
-        // Clear existing layers and sources
-        if (map.current.getSource('route')) {
-            map.current.removeLayer('route');
-            map.current.removeSource('route');
-        }
-        if (map.current.getSource('route-points')) {
-            map.current.removeLayer('route-points');
-            map.current.removeSource('route-points');
-        }
+        {/* Current position marker */}
+        {currentPosition && (
+          <Marker
+            position={[currentPosition.latitude, currentPosition.longitude]}
+            icon={createAirplaneIcon(currentPosition.heading || 0)}
+          >
+            <Popup>
+              <div style={{ color: 'black' }}>
+                <strong>Current Position</strong><br/>
+                <strong>Altitude:</strong> {currentPosition.altitude} ft<br/>
+                <strong>Speed:</strong> {currentPosition.speed} knots<br/>
+                <strong>Heading:</strong> {currentPosition.heading}°<br/>
+                <strong>Vertical Speed:</strong> {currentPosition.verticalSpeed} ft/min
+              </div>
+            </Popup>
+          </Marker>
+        )}
 
-        // Prepare coordinates for the flight path
-        const coordinates = flightPath.map(point => [point.longitude, point.latitude]);
+        {/* Fit bounds to flight path */}
+        {flightCoordinates.length > 0 && (
+          <FitBounds coordinates={flightCoordinates} />
+        )}
+      </MapContainer>
 
-        // Add the route as a line
-        map.current.addSource('route', {
-            type: 'geojson',
-            data: {
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                    type: 'LineString',
-                    coordinates: coordinates
-                }
-            }
-        });
-
-        map.current.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#00D4FF',
-                'line-width': 3,
-                'line-opacity': 0.8
-            }
-        });
-
-        // Add points along the route
-        const pointsFeatures = flightPath.map((point, index) => ({
-            type: 'Feature',
-            properties: {
-                altitude: point.altitude,
-                speed: point.speed,
-                timestamp: point.timestamp,
-                index: index
-            },
-            geometry: {
-                type: 'Point',
-                coordinates: [point.longitude, point.latitude]
-            }
-        }));
-
-        map.current.addSource('route-points', {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: pointsFeatures
-            }
-        });
-
-        map.current.addLayer({
-            id: 'route-points',
-            type: 'circle',
-            source: 'route-points',
-            paint: {
-                'circle-radius': 4,
-                'circle-color': '#00D4FF',
-                'circle-opacity': 0.6
-            }
-        });
-
-        // Add markers for origin and destination
-        if (flightInfo) {
-            // Origin marker
-            const originEl = document.createElement('div');
-            originEl.className = 'origin-marker';
-            originEl.innerHTML = '🛫';
-            originEl.style.fontSize = '24px';
-            
-            new mapboxgl.Marker(originEl)
-                .setLngLat([flightInfo.origin.coordinates.longitude, flightInfo.origin.coordinates.latitude])
-                .setPopup(new mapboxgl.Popup({ offset: 25 })
-                    .setHTML(`<h3>Origin</h3><p>${flightInfo.origin.airport} - ${flightInfo.origin.city}</p>`))
-                .addTo(map.current);
-
-            // Destination marker
-            const destEl = document.createElement('div');
-            destEl.className = 'destination-marker';
-            destEl.innerHTML = '🛬';
-            destEl.style.fontSize = '24px';
-            
-            new mapboxgl.Marker(destEl)
-                .setLngLat([flightInfo.destination.coordinates.longitude, flightInfo.destination.coordinates.latitude])
-                .setPopup(new mapboxgl.Popup({ offset: 25 })
-                    .setHTML(`<h3>Destination</h3><p>${flightInfo.destination.airport} - ${flightInfo.destination.city}</p>`))
-                .addTo(map.current);
-        }
-
-        // Fit map to show the entire route
-        const bounds = coordinates.reduce((bounds, coord) => {
-            return bounds.extend(coord);
-        }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
-
-        map.current.fitBounds(bounds, {
-            padding: 100,
-            duration: 1000
-        });
-
-        // Add popup on hover
-        map.current.on('click', 'route-points', (e) => {
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const properties = e.features[0].properties;
-            
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(`
-                    <div style="color: black;">
-                        <strong>Tracking Point #${properties.index + 1}</strong><br/>
-                        <strong>Altitude:</strong> ${properties.altitude} ft<br/>
-                        <strong>Speed:</strong> ${properties.speed} knots<br/>
-                        <strong>Time:</strong> ${new Date(properties.timestamp).toLocaleString()}
-                    </div>
-                `)
-                .addTo(map.current);
-        });
-
-        // Change cursor on hover
-        map.current.on('mouseenter', 'route-points', () => {
-            map.current.getCanvas().style.cursor = 'pointer';
-        });
-
-        map.current.on('mouseleave', 'route-points', () => {
-            map.current.getCanvas().style.cursor = '';
-        });
-
-    }, [flightPath, flightInfo]);
-
-    // Add current position marker
-    useEffect(() => {
-        if (!map.current || !currentPosition) return;
-
-        // Remove existing current position marker if it exists
-        const existingMarkers = document.getElementsByClassName('current-position-marker');
-        while(existingMarkers.length > 0){
-            existingMarkers[0].remove();
-        }
-
-        // Create airplane marker
-        const el = document.createElement('div');
-        el.className = 'current-position-marker';
-        el.innerHTML = '✈️';
-        el.style.fontSize = '28px';
-        el.style.transform = `rotate(${currentPosition.heading || 0}deg)`;
-
-        new mapboxgl.Marker(el)
-            .setLngLat([currentPosition.longitude, currentPosition.latitude])
-            .setPopup(new mapboxgl.Popup({ offset: 25 })
-                .setHTML(`
-                    <div style="color: black;">
-                        <strong>Current Position</strong><br/>
-                        <strong>Altitude:</strong> ${currentPosition.altitude} ft<br/>
-                        <strong>Speed:</strong> ${currentPosition.speed} knots<br/>
-                        <strong>Heading:</strong> ${currentPosition.heading}°<br/>
-                        <strong>Vertical Speed:</strong> ${currentPosition.verticalSpeed} ft/min
-                    </div>
-                `))
-            .addTo(map.current);
-
-    }, [currentPosition]);
-
-    return (
-        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-            <div className="map-info" style={{
-                position: 'absolute',
-                top: '10px',
-                left: '10px',
-                background: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                padding: '10px',
-                borderRadius: '5px',
-                zIndex: 1,
-                fontSize: '12px'
-            }}>
-                Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}
-            </div>
-            <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
-        </div>
-    );
+      {/* Map info overlay */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        background: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '10px',
+        borderRadius: '5px',
+        zIndex: 1000,
+        fontSize: '12px'
+      }}>
+        <div>Center: {mapCenter[0].toFixed(4)}, {mapCenter[1].toFixed(4)}</div>
+        <div>Zoom: {mapZoom}</div>
+        <div>Points: {flightCoordinates.length}</div>
+      </div>
+    </div>
+  );
 };
 
 export default FlightMap;
-
